@@ -1,0 +1,204 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+	<title></title>
+	<meta name="generator" content="LibreOffice 5.1.6.2 (Linux)"/>
+	<meta name="created" content="2017-03-11T07:30:59.826399142"/>
+	<meta name="changed" content="2017-03-14T22:03:53.043623832"/>
+	<style type="text/css">
+		@page { margin: 2cm }
+		p { margin-bottom: 0.25cm; line-height: 120% }
+		h3.western { font-family: "Liberation Sans", sans-serif; font-size: 14pt }
+		h3.cjk { font-family: "Noto Sans CJK SC Regular"; font-size: 14pt }
+		h3.ctl { font-family: "FreeSans"; font-size: 14pt }
+		a:link { so-language: zxx }
+	</style>
+</head>
+<body lang="en-CA" dir="ltr">
+<h3 class="western">Server Description</h3>
+<p>The server program is a multithreaded application that performs
+socket reads, socket writes, and process work asynchronously. The
+majority of the code simply reacts to asynchronous actions being
+completed. C++ 11 is used extensively throughout the program. <i>Futures</i><span style="font-style: normal">
+are used to access the result of three out of four of the
+asynchronous actions. Only the asynchronous socket accept of new
+connections is dealt with using a callback. The new </span><i>thread</i><span style="font-style: normal">
+functionality is used to kick off the loop responsible for managing
+the reads, writes, and work tasks. For easy thread launching when a
+new primality test is requested, the </span><i>async</i><span style="font-style: normal">
+function is used. The results of the operation are stored in a
+</span><i>future</i><span style="font-style: normal">. </span><span style="font-style: normal">Memory
+management came easy with C++11’s </span><i>shared_ptr</i><span style="font-style: normal">.</span></p>
+<h3 class="western">Libraries Utilized</h3>
+<p>To perform the networking requirements I chose the <span style="font-style: normal"><b>asio</b></span>
+library contained within <span style="font-style: normal"><b>boost</b></span>.
+This networking library simplified the code needed to handle
+asynchronous socket operations. I was pleased that the library
+allowed <span style="font-style: normal">C++11’s </span><i>future</i><span style="font-style: normal">s
+to be used to access the result of asynchronous operations. The asio
+boost library can be found at </span><span style="font-style: normal"><a href="http://www.boost.org/">http://www.boost.org/</a>.</span></p>
+<p><span style="font-style: normal">For the large integer and
+primality testing I chose to use the NTL library. </span><span style="font-style: normal">It
+was far too convenient that this library happened to have large
+integer support and primality testing within it. The creator appeared
+to make the library as efficient as possible and, seeing how the
+majority of the processing would be in primality testing, this was
+important. The NTL library can be found at <a href="http://www.shoup.net/ntl/">http://www.shoup.net/ntl/</a>.
+The GMP library found at <a href="https://gmplib.org/">https://gmplib.org/</a></span>
+is a dependency of the NTL library. 
+</p>
+<p>The GMP and NTL libraries are both licensed under the LGPL. The
+restrictions on this license allow for commercial use as long as the
+application is dynamically linking to the library.</p>
+<h3 class="western">Improvements Required</h3>
+<ul>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">The code
+	contains very little error handling. The library calls made to asio
+	can throw exceptions and some of the exceptions will end up stored
+	in the <i>future</i> objects. None of the <i>future</i><font face="Liberation Serif, serif"><span style="font-style: normal">s</span></font><span style="font-style: normal">
+	are currently checked for exceptions.<br/>
+</span><br/>
+
+	</p>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">The closing
+	of client connections is not sufficiently handled and memory is not
+	currently cleaned up in the server when a client closes.<br/>
+<br/>
+
+	</p>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">The dynamic
+	memory expansion and contraction of the vector in <font face="FreeMono, monospace">ClientConnection</font>
+	is not an efficient way to buffer reads. The best way would be a
+	static amount of memory that is allocated on connection acceptance.
+	The dynamic memory handling of vectors made it convenient to accept
+	integers of any size. The NTL’s big integer can contain integers
+	of 2^64 bits in size.<br/>
+<br/>
+
+	</p>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">Both the
+	server and client programs must be terminated utilizing <b>ctrl + c</b><span style="font-weight: normal">.
+	A better way of notifying processes and threads of a program
+	termination request would be required.<br/>
+</span><br/>
+
+	</p>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">The client is
+	rudimentary and only currently performs one request at a time. This
+	can be changed to make the client make multiple requests before
+	waiting for responses since the server is very much capable of doing
+	so. My plans were to write a several more clients that would
+	generate many requests from random integers and generate requests
+	based on a file list of numbers. All network operations on the
+	client block but this doesn’t mean multiple requests can’t be
+	made from one client.<br/>
+<br/>
+
+	</p>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">The server
+	will spawn a new thread for every primality test. Thread creation,
+	depending on the OS, can be expensive. To counter this expense, it
+	is possible to use C++11’s <i>packaged_task</i>s to wait until a
+	previous request completes before starting the next. In other words,
+	the number of primality tests being performed can be throttled no
+	matter how many requests come in. Another reason to do this is
+	context switching overhead. Depending on the OS and how the OS
+	schedules threads, it is possible that when the number of program
+	threads far exceed the core count of a processor the OS will context
+	switch between threads frequently to give each thread a  slice of
+	CPU time. 
+	</p>
+</ul>
+<p style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<h3 class="western">How to Build on Linux</h3>
+<p>Build essentials are assumed to be installed. 
+</p>
+<p style="margin-bottom: 0cm; line-height: 100%">Compile and Install
+boost (installed alongside code directory)</p>
+<ol>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">In the
+	boost_1_63_0 directory:</p>
+	<ol>
+		<li/>
+<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+		<font face="FreeMono, monospace">./bootstrap.sh –prefix=../boost</font></p>
+		<li/>
+<p style="margin-bottom: 0cm; font-weight: normal; line-height: 100%">
+		<font face="FreeMono, monospace">./b2 install</font></p>
+	</ol>
+</ol>
+<p style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p style="margin-bottom: 0cm; line-height: 100%">Compile and Install
+gmp</p>
+<ol>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">Install m4</p>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">In the
+	gmp-6.1.2 directory:</p>
+	<ol>
+		<li/>
+<p style="margin-bottom: 0cm; line-height: 100%"><font face="FreeMono, monospace">./configure
+		–prefix=$PWD/../gmp</font></p>
+		<li/>
+<p style="margin-bottom: 0cm; line-height: 100%"><font face="FreeMono, monospace">make</font></p>
+		<li/>
+<p style="margin-bottom: 0cm; line-height: 100%"><font face="FreeMono, monospace">make
+		check       <font face="Liberation Serif, serif"><i> (optionally)</i></font><i>
+		</i></font>
+		</p>
+		<li/>
+<p style="margin-bottom: 0cm; font-style: normal; font-weight: normal; line-height: 100%">
+		<font face="FreeMono, monospace">make install</font></p>
+	</ol>
+</ol>
+<p style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p style="margin-bottom: 0cm; line-height: 100%">Compile and Install
+NTL</p>
+<ol>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">In the
+	ntl-10.3.0\src directory:</p>
+	<ol>
+		<li/>
+<p style="margin-bottom: 0cm; line-height: 100%"><font face="FreeMono, monospace">./configure
+		PREFIX=../../ntl GMP_PREFIX=../../gmp</font></p>
+		<li/>
+<p style="margin-bottom: 0cm; line-height: 100%"><font face="FreeMono, monospace">make</font></p>
+		<li/>
+<p style="margin-bottom: 0cm; line-height: 100%"><font face="FreeMono, monospace">make
+		install</font></p>
+	</ol>
+</ol>
+<p style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p style="margin-bottom: 0cm; line-height: 100%">The library
+directories for boost, gmp, and ntl will have to be either added to
+the LD_LIBRARY_PATH environment variable or to the /etc/ld.so.conf.d
+directory and the command ldconfig run, depending on the system.
+Alternatively, the libraries and their development packages can be
+installed by a package manager. A makefile is provided to build the
+server and client in this project.</p>
+<p style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+<p style="margin-bottom: 0cm; line-height: 100%"><br/>
+
+</p>
+</body>
+</html>
