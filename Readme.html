@@ -5,7 +5,7 @@
 	<title></title>
 	<meta name="generator" content="LibreOffice 5.1.6.2 (Linux)"/>
 	<meta name="created" content="2017-03-11T07:30:59.826399142"/>
-	<meta name="changed" content="2017-03-14T22:03:53.043623832"/>
+	<meta name="changed" content="2017-03-14T22:09:54.762082360"/>
 	<style type="text/css">
 		@page { margin: 2cm }
 		p { margin-bottom: 0.25cm; line-height: 120% }
@@ -29,7 +29,10 @@ the reads, writes, and work tasks. For easy thread launching when a
 new primality test is requested, the </span><i>async</i><span style="font-style: normal">
 function is used. The results of the operation are stored in a
 </span><i>future</i><span style="font-style: normal">. </span><span style="font-style: normal">Memory
-management came easy with C++11’s </span><i>shared_ptr</i><span style="font-style: normal">.</span></p>
+management came easy with C++11’s </span><i>shared_ptr</i><span style="font-style: normal">.
+</span><span style="font-style: normal">The server is capable of
+performing primality tests on integers being represented with 2^(64
+-1) bits.</span></p>
 <h3 class="western">Libraries Utilized</h3>
 <p>To perform the networking requirements I chose the <span style="font-style: normal"><b>asio</b></span>
 library contained within <span style="font-style: normal"><b>boost</b></span>.
@@ -76,7 +79,7 @@ application is dynamically linking to the library.</p>
 	static amount of memory that is allocated on connection acceptance.
 	The dynamic memory handling of vectors made it convenient to accept
 	integers of any size. The NTL’s big integer can contain integers
-	of 2^64 bits in size.<br/>
+	of <span style="font-style: normal">2^(64 -1) </span> bits in size.<br/>
 <br/>
 
 	</p>
@@ -112,9 +115,17 @@ application is dynamically linking to the library.</p>
 	context switching overhead. Depending on the OS and how the OS
 	schedules threads, it is possible that when the number of program
 	threads far exceed the core count of a processor the OS will context
-	switch between threads frequently to give each thread a  slice of
-	CPU time. 
+	switch between threads frequently to give each thread a slice of CPU
+	time. <br/>
+<br/>
+
 	</p>
+	<li/>
+<p style="margin-bottom: 0cm; line-height: 100%">The server
+	currently contains a bug where every integer passed into NTL for the
+	primality test is shown as not prime, even for integers known to be
+	prime. This may be a bug in the way the ZZ class is being filled.
+	Examples from the NTL website on filling the ZZ class were followed.</p>
 </ul>
 <p style="margin-bottom: 0cm; line-height: 100%"><br/>
 
